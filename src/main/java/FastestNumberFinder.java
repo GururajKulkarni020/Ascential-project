@@ -13,24 +13,35 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class FastestNumberFinder implements NumberFinder {
     private static final Logger logger = LoggerFactory.getLogger(FastestNumberFinder.class);
     private final Gson reader = new Gson();
-    private final Type jsonJavaType = new TypeToken<List<CustomNumberEntity>>() {}.getType();
+    private final Type jsonJavaType = new TypeToken<List<CustomNumberEntity>>() {
+    }.getType();
 
     @Override
     public boolean contains(int valueToFind, List<CustomNumberEntity> list) {
         FastestComparator fastestComparator = new FastestComparator();
-        if(!list.isEmpty()){
+        if (!list.isEmpty()) {
             return list
                     .parallelStream()
-                    .filter(entity->fastestComparator.compare(valueToFind,entity)==0)
+                    .filter(entity -> getCustomNumberEntityPredicate(entity) && fastestComparator.compare(valueToFind, entity) == 0)
                     .findAny()
                     .isPresent();
         }
         return false;
+    }
+
+    private boolean getCustomNumberEntityPredicate(CustomNumberEntity customNumberEntity) {
+        try {
+            Integer.parseInt(customNumberEntity.getNumber());
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
     }
 
     @Override
